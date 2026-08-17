@@ -21,6 +21,7 @@ const {
 } = require("./orderState");
 
 const app = express();
+app.set("trust proxy", true); // needed so req.ip reflects the real client IP behind Railway's proxy
 app.use(express.json());
 
 const ALLOWED_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5500";
@@ -39,6 +40,32 @@ const MAX_MESSAGE_LENGTH = 2000;
 // API. Optional: local development can still run the frontend from a separate static server
 // (see frontend/script.js and frontend/dashboard.js), which is why this isn't required for dev.
 app.use(express.static(path.join(__dirname, "..", "frontend")));
+
+// Simple per-IP rate limit on /api/chat, since each message triggers a real (billed) AI call.
+// In-memory only — resets on restart, fine for a single-instance demo deployment.
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const rateLimitState = new Map(); // ip -> { count, windowStart }
+
+function chatRateLimiter(req, res, next) {
+  const ip = req.ip || "unknown";
+  const now = Date.now();
+  const entry = rateLimitState.get(ip);
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitState.set(ip, { count: 1, windowStart: now });
+    return next();
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfterSeconds = Math.ceil((entry.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000);
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    return res.status(429).json({ error: "Too many messages — please wait a moment before sending another." });
+  }
+
+  entry.count += 1;
+  next();
+}
 
 const SYSTEM_PROMPT_PATH = path.join(__dirname, "..", "prompts", "system-prompt.md");
 const SYSTEM_PROMPT = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf-8");
@@ -279,7 +306,7 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", chatRateLimiter, async (req, res) => {
   const { message, conversationHistory, sessionId } = req.body || {};
 
   if (typeof message !== "string" || message.trim().length === 0) {
