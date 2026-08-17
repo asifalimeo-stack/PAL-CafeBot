@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const express = require("express");
 const Anthropic = require("@anthropic-ai/sdk");
 const {
@@ -28,7 +29,7 @@ const ALLOWED_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5500";
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
@@ -36,10 +37,55 @@ app.use((req, res, next) => {
 const PORT = process.env.PORT || 3000;
 const MAX_MESSAGE_LENGTH = 2000;
 
-// Serves the customer chat UI and staff dashboard as static files from the same origin as the
-// API. Optional: local development can still run the frontend from a separate static server
-// (see frontend/script.js and frontend/dashboard.js), which is why this isn't required for dev.
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+// Staff dashboard auth (HTTP Basic, single shared username/password). Protects the dashboard
+// page and its API routes. DASHBOARD_USERNAME/DASHBOARD_PASSWORD must be set — if either is
+// missing, the dashboard is refused entirely rather than left open.
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function requireDashboardAuth(req, res, next) {
+  const expectedUser = process.env.DASHBOARD_USERNAME;
+  const expectedPass = process.env.DASHBOARD_PASSWORD;
+
+  if (!expectedUser || !expectedPass) {
+    console.error("Dashboard auth not configured: missing DASHBOARD_USERNAME or DASHBOARD_PASSWORD");
+    return res.status(500).send("Dashboard is not configured.");
+  }
+
+  const authHeader = req.headers.authorization || "";
+  const [scheme, encoded] = authHeader.split(" ");
+
+  if (scheme === "Basic" && encoded) {
+    const decoded = Buffer.from(encoded, "base64").toString("utf-8");
+    const sepIndex = decoded.indexOf(":");
+    const providedUser = sepIndex === -1 ? decoded : decoded.slice(0, sepIndex);
+    const providedPass = sepIndex === -1 ? "" : decoded.slice(sepIndex + 1);
+
+    if (safeEqual(providedUser, expectedUser) && safeEqual(providedPass, expectedPass)) {
+      return next();
+    }
+  }
+
+  res.setHeader("WWW-Authenticate", 'Basic realm="PAL Cafe Staff Dashboard"');
+  return res.status(401).send("Authentication required.");
+}
+
+const FRONTEND_DIR = path.join(__dirname, "..", "frontend");
+
+// Dashboard files are served explicitly (with auth) BEFORE the general static middleware below,
+// so they never fall through to being served unauthenticated.
+app.get("/dashboard.html", requireDashboardAuth, (req, res) => res.sendFile(path.join(FRONTEND_DIR, "dashboard.html")));
+app.get("/dashboard.js", requireDashboardAuth, (req, res) => res.sendFile(path.join(FRONTEND_DIR, "dashboard.js")));
+app.get("/dashboard.css", requireDashboardAuth, (req, res) => res.sendFile(path.join(FRONTEND_DIR, "dashboard.css")));
+
+// Serves the customer chat UI (and any other non-dashboard frontend files) as static files from
+// the same origin as the API. Optional: local development can still run the frontend from a
+// separate static server (see frontend/script.js and frontend/dashboard.js).
+app.use(express.static(FRONTEND_DIR));
 
 // Simple per-IP rate limit on /api/chat, since each message triggers a real (billed) AI call.
 // In-memory only — resets on restart, fine for a single-instance demo deployment.
@@ -481,12 +527,12 @@ app.post("/api/chat", chatRateLimiter, async (req, res) => {
 // Staff/bar dashboard — read confirmed orders and update their status.
 // No customer-facing AI involved; reads/writes data/orders.json directly.
 
-app.get("/api/orders", (req, res) => {
+app.get("/api/orders", requireDashboardAuth, (req, res) => {
   const orders = JSON.parse(fs.readFileSync(ORDERS_PATH, "utf-8"));
   res.json({ orders });
 });
 
-app.patch("/api/orders/:orderId/status", (req, res) => {
+app.patch("/api/orders/:orderId/status", requireDashboardAuth, (req, res) => {
   const { orderId } = req.params;
   const { status } = req.body || {};
 
