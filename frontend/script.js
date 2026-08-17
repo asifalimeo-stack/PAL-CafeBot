@@ -1,6 +1,9 @@
 // PAL CaféBot — Chat UI connected to the backend /api/chat endpoint.
 
-const API_URL = "http://localhost:3000/api/chat";
+// When served by the backend itself (production, or port 3000 locally), use a relative path.
+// The local dev workflow serves this page from a separate static server on port 5500, which
+// needs the full localhost:3000 URL instead.
+const API_URL = window.location.port === "5500" ? "http://localhost:3000/api/chat" : "/api/chat";
 
 const chatArea = document.getElementById("chatArea");
 const chatForm = document.getElementById("chatForm");

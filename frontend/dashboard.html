@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PAL Café — Bar Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="dashboard.css" />
+</head>
+<body class="dashboard-body">
+  <header class="chat-header">
+    <div class="brand">
+      <span class="brand-name">PAL</span>
+      <span class="brand-sub">Bar &amp; Staff Dashboard</span>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div class="dashboard-toolbar">
+      <button id="refreshBtn" class="refresh-btn" type="button">Refresh</button>
+      <span id="orderCount" class="order-count"></span>
+    </div>
+
+    <div id="dashboardError" class="chat-error" role="alert" hidden>
+      Couldn't load orders. Please try refreshing.
+    </div>
+
+    <div id="ordersList" class="orders-list" aria-live="polite">
+      <!-- Order cards inserted here by dashboard.js -->
+    </div>
+
+    <p id="emptyState" class="empty-state" hidden>No confirmed orders yet.</p>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
