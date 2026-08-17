@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PAL Café — Chat</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="chat-app">
+    <header class="chat-header">
+      <div class="brand">
+        <span class="brand-name">PAL</span>
+        <span class="brand-sub">Café · Khalifa City, Abu Dhabi</span>
+      </div>
+    </header>
+
+    <main class="chat-area" id="chatArea" aria-live="polite">
+      <!-- Messages are inserted here by script.js -->
+    </main>
+
+    <div class="chat-error" id="chatError" role="alert" hidden>
+      Something went wrong sending your message. Please try again.
+    </div>
+
+    <form class="chat-input-bar" id="chatForm">
+      <input
+        type="text"
+        id="chatInput"
+        class="chat-input"
+        placeholder="Ask about our menu..."
+        autocomplete="off"
+        aria-label="Type your message"
+        dir="auto"
+      />
+      <button type="submit" id="sendBtn" class="send-btn" aria-label="Send message">
+        Send
+      </button>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

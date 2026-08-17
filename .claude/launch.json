@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pal-cafebot-frontend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\Users\\palco\\AppData\\Local\\Temp\\claude\\D--Multi-Project-PAL-CafeBot\\31a123a3-b3ef-4a45-a9e7-90136164d2ce\\scratchpad\\dev-server.js"],
+      "port": 5500
+    }
+  ]
+}

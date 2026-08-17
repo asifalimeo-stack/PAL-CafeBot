@@ -1,0 +1,35 @@
+[
+  {
+    "id": "promo-sample-welcome10",
+    "name": "SAMPLE — Welcome 10% Off",
+    "rule": "Applies a 10% discount to the subtotal on a customer's first order.",
+    "discount_or_benefit": "10% off subtotal",
+    "eligibility": "First-time customers only, one use per customer",
+    "active": true,
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31",
+    "note": "SAMPLE PROMOTION — for development/testing only. This is not a real, currently offered PAL Café promotion."
+  },
+  {
+    "id": "promo-sample-freefries",
+    "name": "SAMPLE — Free Fries with Burger",
+    "rule": "A free order of French Fries is added when any burger-category item is in the order.",
+    "discount_or_benefit": "1x French Fries (extra-french-fries) free",
+    "eligibility": "Order must contain at least one item from the burger category",
+    "active": false,
+    "start_date": "2026-01-01",
+    "end_date": "2026-06-30",
+    "note": "SAMPLE PROMOTION — inactive by default. This is not a real, currently offered PAL Café promotion."
+  },
+  {
+    "id": "promo-sample-delivery-waiver",
+    "name": "SAMPLE — Delivery Fee Waived Over AED 100",
+    "rule": "Waives the delivery fee when the order subtotal is AED 100 or more and order_type is delivery.",
+    "discount_or_benefit": "Delivery fee reduced to AED 0",
+    "eligibility": "order_type = delivery AND subtotal >= 100 AED",
+    "active": true,
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31",
+    "note": "SAMPLE PROMOTION — for development/testing only. This is not a real, currently offered PAL Café promotion."
+  }
+]
